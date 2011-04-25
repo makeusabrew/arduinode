@@ -24,10 +24,13 @@ var jenkinsClient = new JenkinsClient({
     host: process.argv[4]
 });
 
+var arduinoIp = '192.168.2.10'; // change this according to whatever your Arduino's IP is
+var arduinoPort = 8888;         // port the Arduino is listening for UDP packets on
+
 var oldStatus = null;
 var oldAnimated = null;
 
-setInterval(function() {
+var getJobs = function() {
     jenkinsClient.getJobs(function(jobs) {
         var status = 'S';
         var animated = 'N';
@@ -54,12 +57,15 @@ setInterval(function() {
 
             var udpClient = dgram.createSocket('udp4');
             var msg = new Buffer(status+animated);
-            util.debug(msg);
-            udpClient.send(msg, 0, msg.length, 8888, '192.168.2.10', function(err, bytes) {
+            udpClient.send(msg, 0, msg.length, arduinoPort, arduinoIp, function(err, bytes) {
                 if (err) throw err;
-                util.debug('Wrote ' + bytes + ' bytes');
+                util.debug('Sent ' + bytes + ' bytes to '+arduinoIp+':'+arduinoPort);
                 udpClient.close();
             });
         }
+
+        setTimeout(getJobs, 2000);
     });
-}, 5000);
+}
+
+getJobs();
