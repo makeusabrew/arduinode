@@ -1,0 +1,31 @@
+<canvas id="lightstats" width="800" height="600"></canvas>
+
+<script>
+    $(function() {
+        var socket = new io.Socket();
+        var latest = 0;
+        var high = 0;
+        var low = 0;
+        var data = [];
+        var context = document.getElementById("lightstats").getContext("2d");
+
+        socket.connect();
+        socket.on('message', function(msg) {
+            var currentPos = data.length;
+            var nextPos = currentPos + 1;
+            console.log("data", currentPos, latest, nextPos, msg.light);
+
+            if (currentPos > 0) {
+                context.beginPath();
+                context.moveTo(currentPos, latest);
+                context.lineTo(nextPos, msg.light);
+                context.strokeStyle = "#333";
+                context.closePath();
+                context.stroke();
+            }
+
+            data.push(msg.light);
+            latest = msg.light;
+        });
+    });
+</script>
