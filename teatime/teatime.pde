@@ -9,9 +9,9 @@ void setup() {
 void loop() {
   int val = analogRead(2);
   int final = (int)(val / scale);
-  Serial.print(val);
-  Serial.print(" - ");
-  Serial.println(final);
+  //Serial.print(val);
+  //Serial.print(" - ");
+  //Serial.println(final);
   analogWrite(6, final);
-  delay(100);
+  //delay(100);
 }
