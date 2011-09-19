@@ -1,17 +1,22 @@
 /**
- * receive board
+ * ServerLoad - receive sketch
+ *
+ * This sketch is responsible for receiving data via Serial (XBee or USB) and interpreting
+ * the values received as server loads. It then activates up to 8 LEDs based on the load
+ * as well as an alarm if the load is particularly dangerous.
  */
 
-int data = 2;
-int clock = 3;
-int latch = 4;
+// pin stuff
+int data       = 2;
+int clock      = 3;
+int latch      = 4;
 int speakerPin = 9;
 
 char buffer[8];
-int recvCount = 0;
+int recvCount     = 0;
 float currentLoad = 0.0;
-int numCores = 1;
-float scale = 100.0; // e.g. a load of 100 actually equals 1.00
+int numCores      = 1;     // how many cores does the target server have?
+float scale       = 100.0; // e.g. a load of 100 actually equals 1.00
 
 // these apply after the load has been normalised based on scale and number of cores
 float ranges[] = {
@@ -26,15 +31,19 @@ float ranges[] = {
   8.0    // red
 };
 
-int currentIndex = 0;
+int currentRange = 0;
 
+// for each range, these are the values we want to send to the shift register
+// we could (and should) automatically generate these based on the following formula
+// x = (2^y)-1
+// where y = number of LEDs to light up
 int values[] = {
   0, 1, 3, 7, 15, 31, 63, 127, 255
 };
 
 float alarmStart = 6.0;
-float alarmStop = 1.0;
-boolean alarm = false;
+float alarmStop = 4.0;
+boolean alarmTriggered = false;
 
 void setup() {
   pinMode(data, OUTPUT);
@@ -50,29 +59,56 @@ void loop() {
     if (buffer[recvCount] == 13) {
       buffer[recvCount] = 0;
       // got delimter, so process the input
-      int value = atoi(buffer);  
+      int value = atoi(buffer);
+      
+      // for simplicity, the input is scaled from 1.00 -> 100
+      // so scale it back down
       currentLoad = (float)value / scale;
+      
+      // now divide it by the number of cores to normalise it
       currentLoad /= (float)numCores;
+      
+      // debug output showing the normalised load average
       Serial.println(currentLoad);
+      
+      // work out the highest range this load average fits into
       for (int i = 8; i >= 0; i--) {
         if (currentLoad >= ranges[i]) {
-          // got current load range, that'll do
-          currentIndex = i;
+          currentRange = i;
           Serial.println(i);
           break;
         }
-      }      
-      for (int i = 0; i < 8; i++) {
-        buffer[i] = '\0';
       }
+     
+      // reset the input buffer 
+      memset(buffer, '\0', sizeof(buffer));
       recvCount = 0;
+      
+      // alarm stuff
+      if (alarmTriggered && currentLoad <= alarmStop) {
+        // do any one time "hooray, panic over" stuff here
+        alarmTriggered = false;
+      } else if (!alarmTriggered && currentLoad >= alarmStart) {
+        // do any one time "uh oh, meltdown" stuff here
+        alarmTriggered = true;
+      }
     } else {
+      // if we didn't get a carriage return then make sure the
+      // next byte we read in is added to the correct buffer slot
       recvCount ++;
     }
   }
+  
+  // write the current value to the shift register
   digitalWrite(latch, LOW);
-  shiftOut(data, clock, MSBFIRST, values[currentIndex]);
+  shiftOut(data, clock, MSBFIRST, values[currentRange]);
   digitalWrite(latch, HIGH);
+  
+  // alarm mode? play some annoying stuff
+  if (alarmTriggered) {
+    playNote('f', 250);
+    playNote('d', 250);
+  }
 }
 
 /**

@@ -1,7 +1,6 @@
 /**
- * serverload - relay data from serial input to XBEE out
+ * serverload - relay data from serial input to XBee output
  */
-#include <stdlib.h>
 char buffer[8];
 int recvCount = 0;
 
@@ -11,15 +10,22 @@ void setup() {
 }
 
 void loop() {  
-  if (Serial.available()) {      
+  if (Serial.available()) {
+    // N.B Serial is USB serial, NOT XBee    
     buffer[recvCount] = Serial.read();
-    if (buffer[recvCount] == 13) { 
+    
+    // ASCII code 13 is a carriage return - our delimiter
+    if (buffer[recvCount] == 13) {
+      
+      // print it to Serial output - both USB and XBee
       Serial.print(buffer);
-      for (int i = 0; i < 8; i++) {
-        buffer[i] = '\0';
-      }
+      
+      // reset our buffer string
+      memset(buffer, '\0', sizeof(buffer));
       recvCount = 0;
     } else {
+      // if we didn't get a carriage return then make sure the
+      // next byte we read in is added to the correct buffer slot
       recvCount ++;
     }
   }    
