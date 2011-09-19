@@ -9,7 +9,32 @@ int speakerPin = 9;
 
 char buffer[8];
 int recvCount = 0;
-int currentLoad = 0;
+float currentLoad = 0.0;
+int numCores = 1;
+float scale = 100.0; // e.g. a load of 100 actually equals 1.00
+
+// these apply after the load has been normalised based on scale and number of cores
+float ranges[] = {
+  0.00,  // off
+  0.10,  // green
+  0.50,  // green
+  0.75,  // green
+  1.00,  // yellow
+  1.50,  // yellow
+  2.0,   // yellow
+  4.0,   // red
+  8.0    // red
+};
+
+int currentIndex = 0;
+
+int values[] = {
+  0, 1, 3, 7, 15, 31, 63, 127, 255
+};
+
+float alarmStart = 6.0;
+float alarmStop = 1.0;
+boolean alarm = false;
 
 void setup() {
   pinMode(data, OUTPUT);
@@ -21,30 +46,33 @@ void setup() {
 
 void loop() {
   if (Serial.available()) {      
-      buffer[recvCount] = Serial.read();
-      if (buffer[recvCount] == 13) {
-        buffer[recvCount] = 0;
-        // got delimter, so process the input
-        int value = atoi(buffer);  
-        currentLoad = value;
-        for (int i = 0; i < 8; i++) {
-          buffer[i] = '\0';
+    buffer[recvCount] = Serial.read();
+    if (buffer[recvCount] == 13) {
+      buffer[recvCount] = 0;
+      // got delimter, so process the input
+      int value = atoi(buffer);  
+      currentLoad = (float)value / scale;
+      currentLoad /= (float)numCores;
+      Serial.println(currentLoad);
+      for (int i = 8; i >= 0; i--) {
+        if (currentLoad >= ranges[i]) {
+          // got current load range, that'll do
+          currentIndex = i;
+          Serial.println(i);
+          break;
         }
-        //Serial.println("got carriage return");
-        recvCount = 0;
-      } else {
-        recvCount ++;
+      }      
+      for (int i = 0; i < 8; i++) {
+        buffer[i] = '\0';
       }
+      recvCount = 0;
+    } else {
+      recvCount ++;
     }
-  //for (int i = 0; i < 256; i++) {
-    digitalWrite(latch, LOW);
-    shiftOut(data, clock, MSBFIRST, currentLoad);
-    digitalWrite(latch, HIGH);
-    //playNote('c', 100);
-    //Serial.println("played note");
-    
-   // delay(900);
-  //}
+  }
+  digitalWrite(latch, LOW);
+  shiftOut(data, clock, MSBFIRST, values[currentIndex]);
+  digitalWrite(latch, HIGH);
 }
 
 /**
