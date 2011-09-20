@@ -10,8 +10,8 @@
  * OR serverload_receive.pde. If you've got two XBee radios use serverload_send.pde
  * to relay the server load to a wireless Arduino running severload_receive.pde.
  *
- * If you haven't got any XBee radios, use serverload_send.pde to monitor the server
- * load directly - the only difference being the monitor isn't wireless.
+ * If you haven't got any XBee radios, use serverload_receive.pde to monitor the server
+ * load directly - the only difference being the monitor isn't portable.
  */
 var redis      = require('redis'),
     SerialPort = require('serialport').SerialPort,

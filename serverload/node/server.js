@@ -22,7 +22,7 @@ client.auth(process.argv[3]);
 // cache the last load average we got so we don't spam the redis channel
 var oldLoad = -1;
 
-// crude loop to probe the server load. We could use fs.watchFile('/cat/loadavg')
+// crude loop to probe the server load. We could use fs.watchFile('/proc/loadavg')
 // instead, but that would trigger too often
 setInterval(function() {
     var load = os.loadavg();
