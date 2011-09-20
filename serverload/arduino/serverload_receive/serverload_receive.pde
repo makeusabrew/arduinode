@@ -22,27 +22,18 @@ float scale       = 100.0; // e.g. a load of 100 actually equals 1.00
 float ranges[] = {
   0.00,  // off
   0.10,  // green
+  0.25,  // green
   0.50,  // green
-  0.75,  // green
+  0.75,  // yellow
   1.00,  // yellow
-  1.50,  // yellow
-  2.0,   // yellow
-  4.0,   // red
-  8.0    // red
+  1.75,  // yellow
+  2.00,  // red
+  5.00   // red
 };
 
-int currentRange = 0;
-
-// for each range, these are the values we want to send to the shift register
-// we could (and should) automatically generate these based on the following formula
-// x = (2^y)-1
-// where y = number of LEDs to light up
-int values[] = {
-  0, 1, 3, 7, 15, 31, 63, 127, 255
-};
-
-float alarmStart = 6.0;
-float alarmStop = 4.0;
+int shiftVal = 0;
+float alarmStart = 2.0;
+float alarmStop = 1.0;
 boolean alarmTriggered = false;
 
 void setup() {
@@ -74,8 +65,13 @@ void loop() {
       // work out the highest range this load average fits into
       for (int i = 8; i >= 0; i--) {
         if (currentLoad >= ranges[i]) {
-          currentRange = i;
           Serial.println(i);
+          if (i > 0) {
+            shiftVal = (1 << i) -1;
+          } else {
+            // bit shifting doesn't work if i is 0
+            shiftVal = 0;
+          }
           break;
         }
       }
@@ -100,8 +96,8 @@ void loop() {
   }
   
   // write the current value to the shift register
-  digitalWrite(latch, LOW);
-  shiftOut(data, clock, MSBFIRST, values[currentRange]);
+  digitalWrite(latch, LOW);  
+  shiftOut(data, clock, MSBFIRST, shiftVal);
   digitalWrite(latch, HIGH);
   
   // alarm mode? play some annoying stuff
