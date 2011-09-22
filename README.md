@@ -33,7 +33,8 @@ one of which indicating the overall status of all projects and one indicating an
 
 ### ServerLoad
 
-Writeup coming soon - check the [Payne Digital](http://paynedigital.com) website for more info.
+A real time physical visualisation of a server's load average. Check the [write up](http://paynedigital.com/2011/09/arduinode-experiments-server-load)
+on the [Payne Digital](http://paynedigital.com) website for more info.
 
 License
 -------
